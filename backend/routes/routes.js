@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Room = require("../models/Room");
-
+const User = require("../models/User");
 // router.get("/room/:id")
 const generateRandomCode = (length) => {
   let result = "";
@@ -29,5 +29,12 @@ router.post("/createroom", async (req, res) => {
   });
   await room.save();
   res.send(room);
+});
+router.get("/user/:id", async (req, res) => {
+  let id = req.params.id;
+  User.findOne({ id: id }, (err, user) => {
+    if (err) console.log(err);
+    res.send(user);
+  });
 });
 module.exports = router;

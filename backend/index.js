@@ -6,6 +6,8 @@ const app = require("express")();
 const server = require("http").createServer(app);
 const routes = require("./routes/routes");
 const Room = require("./models/Room");
+const User = require("./models/User");
+const nanoid = require("nanoid");
 
 const io = require("socket.io")(server, {
   cors: {
@@ -41,18 +43,19 @@ io.on("connection", (socket) => {
   //--------------------------------------------------------------------------------------------------------------------------
   socket.on("createroom", (data) => {
     socket.join(data.code);
-
+    //possible send the id to client
+    let id = nanoid(16);
+    const user = new User({
+      username: data.username,
+      host: false,
+      id: id,
+    });
     console.log(`${data.username} JOINED THE ROOM`);
     console.log(data.code);
     const room = new Room({
       code: data.code,
       host: data.username,
-      users: [
-        {
-          username: data.username,
-          host: true,
-        },
-      ],
+      users: [user],
     });
     try {
       room.save();
@@ -60,6 +63,7 @@ io.on("connection", (socket) => {
       console.log(err);
     }
     // io.to(data.code).emit("LODSTER JOINED THE ROOM");
+    socket.emit("onCreate", user);
     io.sockets.in(data.code).emit("roomCreated", room);
     // io.to(data.code).emit("roomC");
   });
@@ -74,12 +78,20 @@ io.on("connection", (socket) => {
   //--------------------------------------------------------------------------------------------------------------------------
   socket.on("joinroom", (data) => {
     try {
+      //create a user here
+      //possible send the id to client
+      let id = nanoid(16);
+      const user = new User({
+        username: data.username,
+        host: false,
+        id: id,
+      });
       let update = { username: data.username, host: false };
       Room.findOneAndUpdate(
         { code: data.code },
         {
           $push: {
-            users: update,
+            users: user,
           },
         },
         {
@@ -90,6 +102,7 @@ io.on("connection", (socket) => {
           console.log(room);
           socket.join(room.code);
           io.sockets.in(room.code).emit("newUser", room);
+          socket.emit("onJoin", user);
           //   io.to(data.code).emit("room cretaed");
         }
       );
@@ -100,6 +113,22 @@ io.on("connection", (socket) => {
   });
   socket.on("gameStarted", (data) => {
     let code = data.code;
+    console.log(data);
     io.sockets.in(code).emit("redirect", { code: data.code });
+  });
+  socket.on("initializeGame", (data) => {
+    Room.findOne({ code: data.code }, (err, room) => {
+      if (err) console.log(err);
+      console.log(room);
+      socket.join(room.code);
+      let counter = 200;
+      let CountdownTimer = setInterval(function () {
+        io.sockets.in(room.code).emit("countdown", counter);
+        counter--;
+      }, 1000);
+
+      io.sockets.in(room.code).emit("getUsers", room.users);
+      // socket.emit("onJoin", user);
+    });
   });
 });

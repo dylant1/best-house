@@ -25,11 +25,24 @@ export default function Home() {
     setCurrPlayers(data.users);
     setInRoom(true);
     setRoomCode(data.code);
+    // if (typeof window !== "undefined") {
+    //   localStorage.setItem("code", data.code);
+    // }
+  });
+  socket.on("onCreate", (data) => {
+    localStorage.setItem("id", data.id);
+  });
+  socket.on("onJoin", (data) => {
+    console.log(data);
+    localStorage.setItem("id", data.id);
   });
   socket.on("roomCreated", (data) => {
     console.log(data);
     setInRoom(true);
     setRoomCode(data.code);
+    // if (typeof window !== "undefined") {
+    //   localStorage.setItem("code", data.code);
+    // }
     setCurrPlayers(data.users);
   });
   const handleJoinRoom = (e) => {
@@ -50,11 +63,6 @@ export default function Home() {
     setGameHost(true);
   };
   const handleStartGame = () => {
-    // the game has started so send data to backend
-    // what do we need though
-    // redirect to a new page
-    console.log("Game started");
-    //redirect to game page
     socket.emit("gameStarted", { code: roomCode });
   };
   const generateRandomCode = (length) => {

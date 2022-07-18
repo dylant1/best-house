@@ -9,7 +9,7 @@ const roomSchema = mongoose.Schema({
       id: {
         type: String,
         required: true,
-        default: () => nanoid(7),
+        default: () => nanoid(16),
         index: { unique: true },
       },
       username: String,
