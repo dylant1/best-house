@@ -1,10 +1,54 @@
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
-import socketClient from "socket.io-client";
+const io = require("socket.io-client");
+import { useState } from "react";
 export default function Home() {
-  const SERVER = "http://127.0.0.1:8080";
-  const socket = socketClient (SERVER);
+  const [roomCode, setRoomCode] = useState("");
+  const [username, setUsername] = useState("USER");
+  const [inRoom, setInRoom] = useState(false);
+  const [currPlayers, setCurrPlayers] = useState([]);
+  const socket = io("http://localhost:8080/", {
+    withCredentials: true,
+  });
+  socket.on("newUser", (data) => {
+    console.log(data);
+    console.log(currPlayers);
+    setCurrPlayers(data.users);
+    setInRoom(true);
+    setRoomCode(data.code);
+  });
+  socket.on("roomCreated", (data) => {
+    console.log(data);
+    setInRoom(true);
+    setRoomCode(data.code);
+    setCurrPlayers(data.users);
+  });
+  const handleJoinRoom = (e) => {
+    e.preventDefault();
+    socket.emit("joinroom", {
+      code: roomCode,
+      username: username,
+    });
+  };
+  const handleCreateRoom = (e) => {
+    e.preventDefault();
+    socket.emit("createroom", {
+      code: generateRandomCode(6),
+      username: username,
+    });
+  };
+  const generateRandomCode = (length) => {
+    let result = "";
+    let characters =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+  };
+
   return (
     <div>
       <Head>
@@ -13,20 +57,41 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main>test</main>
-
-      {/* <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer> */}
+      <main>
+        {!inRoom ? (
+          //NOT IN ROOM, SHOW FORM
+          <div>
+            <input
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="USERNAME"
+            />
+            <form onSubmit={handleCreateRoom}>
+              <input type="submit" value="Create Room" />
+            </form>
+            or
+            <form onSubmit={handleJoinRoom}>
+              <input
+                type="text"
+                placeholder="ENTER CODE"
+                onChange={(e) => setRoomCode(e.target.value)}
+              />
+              <input type="submit" />
+            </form>
+          </div>
+        ) : (
+          <div>
+            Invite Friends With Code: <h1>{roomCode}</h1>
+            <div>
+              lobby:{" "}
+              <h1>
+                {currPlayers.map((obj, index) => {
+                  return <div key={obj.id}>{obj.username}</div>;
+                })}
+              </h1>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
