@@ -6,6 +6,7 @@ const app = require("express")();
 const server = require("http").createServer(app);
 const routes = require("./routes/routes");
 const Room = require("./models/Room");
+
 const io = require("socket.io")(server, {
   cors: {
     origin: "http://localhost:3000",
@@ -48,8 +49,8 @@ io.on("connection", (socket) => {
       host: data.username,
       users: [
         {
-          id: 1235512,
           username: data.username,
+          host: true,
         },
       ],
     });
@@ -73,7 +74,7 @@ io.on("connection", (socket) => {
   //--------------------------------------------------------------------------------------------------------------------------
   socket.on("joinroom", (data) => {
     try {
-      let update = { username: data.username, id: 12424141242 };
+      let update = { username: data.username, host: false };
       Room.findOneAndUpdate(
         { code: data.code },
         {
@@ -89,12 +90,16 @@ io.on("connection", (socket) => {
           console.log(room);
           socket.join(room.code);
           io.sockets.in(room.code).emit("newUser", room);
-          io.to(data.code).emit("room cretaed");
+          //   io.to(data.code).emit("room cretaed");
         }
       );
       console.log(data);
     } catch (err) {
       console.log(err);
     }
+  });
+  socket.on("gameStarted", (data) => {
+    let code = data.code;
+    io.sockets.in(code).emit("redirect", { code: data.code });
   });
 });

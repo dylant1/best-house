@@ -1,6 +1,8 @@
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
+import { useRouter } from "next/router";
+
 const io = require("socket.io-client");
 import { useState } from "react";
 export default function Home() {
@@ -8,8 +10,14 @@ export default function Home() {
   const [username, setUsername] = useState("USER");
   const [inRoom, setInRoom] = useState(false);
   const [currPlayers, setCurrPlayers] = useState([]);
+  const [gameHost, setGameHost] = useState(false);
+  const router = useRouter();
+
   const socket = io("http://localhost:8080/", {
     withCredentials: true,
+  });
+  socket.on("redirect", (data) => {
+    router.push(`/play/${data.code}`);
   });
   socket.on("newUser", (data) => {
     console.log(data);
@@ -33,10 +41,21 @@ export default function Home() {
   };
   const handleCreateRoom = (e) => {
     e.preventDefault();
+    let code = generateRandomCode(6);
     socket.emit("createroom", {
-      code: generateRandomCode(6),
+      code: code,
       username: username,
     });
+    setRoomCode(code);
+    setGameHost(true);
+  };
+  const handleStartGame = () => {
+    // the game has started so send data to backend
+    // what do we need though
+    // redirect to a new page
+    console.log("Game started");
+    //redirect to game page
+    socket.emit("gameStarted", { code: roomCode });
   };
   const generateRandomCode = (length) => {
     let result = "";
@@ -89,6 +108,7 @@ export default function Home() {
                 })}
               </h1>
             </div>
+            {gameHost && <button onClick={handleStartGame}>START GAME</button>}
           </div>
         )}
       </main>

@@ -1,12 +1,19 @@
 const mongoose = require("mongoose");
-
+const nanoid = require("nanoid");
+// TODO: make users its own schema
 const roomSchema = mongoose.Schema({
   code: String,
   host: String,
   users: [
     {
-      id: Number,
+      id: {
+        type: String,
+        required: true,
+        default: () => nanoid(7),
+        index: { unique: true },
+      },
       username: String,
+      host: Boolean,
     },
   ],
 });
