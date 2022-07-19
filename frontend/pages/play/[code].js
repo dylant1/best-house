@@ -12,11 +12,11 @@ const GameDashboard = () => {
   });
   //TODO: GET TIME WORKING
   socket.on("getUsers", (data) => {
-    // console.log(data);
     setPlayers(data);
   });
   if (code) {
     socket.emit("initializeGame", { code: code });
+    // socket.emit("end");
   }
   useEffect(() => {
     if (typeof window !== "undefined") {

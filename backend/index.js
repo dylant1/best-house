@@ -33,6 +33,9 @@ server.listen(PORT, () => {
 });
 
 io.on("connection", (socket) => {
+  socket.on("end", function () {
+    socket.disconnect(0);
+  });
   //--------------------------------------------------------------------------------------------------------------------------
   //--------------------------------------------------------------------------------------------------------------------------
   //--------------------------------------------------------------------------------------------------------------------------
@@ -50,8 +53,6 @@ io.on("connection", (socket) => {
       host: false,
       id: id,
     });
-    console.log(`${data.username} JOINED THE ROOM`);
-    console.log(data.code);
     const room = new Room({
       code: data.code,
       host: data.username,
@@ -66,6 +67,7 @@ io.on("connection", (socket) => {
     socket.emit("onCreate", user);
     io.sockets.in(data.code).emit("roomCreated", room);
     // io.to(data.code).emit("roomC");
+    // socket.disconnect(0);
   });
   //--------------------------------------------------------------------------------------------------------------------------
   //--------------------------------------------------------------------------------------------------------------------------
@@ -99,7 +101,6 @@ io.on("connection", (socket) => {
         },
         (err, room) => {
           if (err) console.log(err);
-          console.log(room);
           socket.join(room.code);
           io.sockets.in(room.code).emit("newUser", room);
           socket.emit("onJoin", user);
@@ -113,22 +114,15 @@ io.on("connection", (socket) => {
   });
   socket.on("gameStarted", (data) => {
     let code = data.code;
-    console.log(data);
     io.sockets.in(code).emit("redirect", { code: data.code });
+    // socket.disconnect(0);
   });
   socket.on("initializeGame", (data) => {
     Room.findOne({ code: data.code }, (err, room) => {
       if (err) console.log(err);
-      console.log(room);
       socket.join(room.code);
-      let counter = 200;
-      let CountdownTimer = setInterval(function () {
-        io.sockets.in(room.code).emit("countdown", counter);
-        counter--;
-      }, 1000);
-
+      //TODO: IMPLEMENT TIMER RIGHT HERE
       io.sockets.in(room.code).emit("getUsers", room.users);
-      // socket.emit("onJoin", user);
     });
   });
 });
